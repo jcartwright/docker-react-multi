@@ -1,0 +1,24 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t jcartwright/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true jcartwright/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t jcartwright/multi-client ./client
+  - docker build -t jcartwright/multi-nginx ./nginx
+  - docker build -t jcartwright/multi-server ./server
+  - docker build -t jcartwright/multi-worker ./worker
+
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+  # Push images to docker hub
+  - docker push jcartwright/multi-client
+  - docker push jcartwright/multi-nginx
+  - docker push jcartwright/multi-server
+  - docker push jcartwright/multi-worker
